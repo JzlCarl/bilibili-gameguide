@@ -119,7 +119,9 @@ def build_css(cfg: dict) -> str:
     toc_bg   = html.get("toc_bg_color",   "#0d1117")
     toc_w    = html.get("toc_width",      "260px")
 
-    return f"""  :root {{
+    return f"""@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+  :root {{
     --accent: {accent};
     --bg:     {bg};
     --card:   {card};
@@ -133,115 +135,246 @@ def build_css(cfg: dict) -> str:
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   html {{ scroll-behavior: smooth; }}
 
+  /* 动画关键帧 */
+  @keyframes fadeInUp {{
+    from {{ opacity: 0; transform: translateY(20px); }}
+    to {{ opacity: 1; transform: translateY(0); }}
+  }}
+  @keyframes shimmer {{
+    0% {{ background-position: -200% 0; }}
+    100% {{ background-position: 200% 0; }}
+  }}
+
+  body {{
+    font-family: 'Noto Sans SC', {font};
+    background: {bg};
+    color: {text};
+    line-height: 1.8;
+    min-height: 100vh;
+    /* 渐变背景 + 噪点纹理 */
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba({accent.replace('#','')},0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba({tag.replace('#','')},0.1) 0%, transparent 50%),
+      linear-gradient(180deg, {bg} 0%, #0a0e12 100%);
+    background-attachment: fixed;
+  }}
+
   .layout {{
     display: flex; align-items: flex-start;
     max-width: 1400px; margin: 0 auto;
-    padding: 1rem; gap: 1.5rem;
+    padding: 2rem 1.5rem; gap: 2rem;
   }}
 
+  /* 玻璃态侧边栏 */
   .toc-sidebar {{
     width: var(--toc-w); min-width: var(--toc-w);
-    max-height: 100vh; position: sticky; top: 1rem;
-    overflow-y: auto; background: var(--toc-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px; padding: 1rem; flex-shrink: 0;
-    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    max-height: 100vh; position: sticky; top: 1.5rem;
+    overflow-y: auto;
+    background: rgba({card}, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 1.25rem; flex-shrink: 0;
+    scrollbar-width: thin; scrollbar-color: {border} transparent;
+    box-shadow:
+      0 4px 30px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }}
   .toc-sidebar::-webkit-scrollbar {{ width: 4px; }}
-  .toc-sidebar::-webkit-scrollbar-thumb {{ background: var(--border); border-radius: 2px; }}
+  .toc-sidebar::-webkit-scrollbar-thumb {{ background: {border}; border-radius: 2px; }}
   .toc-title {{
-    font-size: .8rem; font-weight: 700; color: var(--accent);
-    letter-spacing: .08em; text-transform: uppercase;
-    margin-bottom: .8rem; padding-bottom: .5rem;
-    border-bottom: 1px solid var(--border);
+    font-size: .75rem; font-weight: 700;
+    background: linear-gradient(135deg, {accent}, {tag});
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: .12em; text-transform: uppercase;
+    margin-bottom: 1rem; padding-bottom: .75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }}
   .toc-list {{ list-style: none; }}
-  .toc-h2 {{ margin: .4rem 0 .2rem; }}
-  .toc-h3 {{ margin: .1rem 0 .1rem .8rem; }}
+  .toc-h2 {{ margin: .5rem 0 .25rem; }}
+  .toc-h3 {{ margin: .15rem 0 .15rem 1rem; }}
   .toc-link {{
-    display: block; font-size: .82rem; color: #8b949e;
-    text-decoration: none; padding: .2rem .4rem; border-radius: 4px;
-    transition: color .15s, background .15s;
+    display: block; font-size: .85rem; color: #8b949e;
+    text-decoration: none; padding: .35rem .6rem; border-radius: 8px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    position: relative;
   }}
-  .toc-link:hover {{ color: var(--text); background: var(--card); }}
-  .toc-link.sub {{ font-size: .76rem; }}
+  .toc-link::before {{
+    content: ''; position: absolute; left: 0; top: 50%;
+    transform: translateY(-50%) scaleY(0);
+    width: 3px; height: 60%; background: {accent};
+    border-radius: 0 2px 2px 0;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }}
+  .toc-link:hover {{
+    color: {text};
+    background: rgba(255,255,255,0.05);
+    transform: translateX(4px);
+  }}
+  .toc-link:hover::before {{ transform: translateY(-50%) scaleY(1); }}
+  .toc-link.sub {{ font-size: .78rem; }}
 
   .main {{ flex: 1; min-width: 0; max-width: var(--max-w); }}
 
+  /* 视频信息面板 - 玻璃态卡片 */
   .video-banner {{
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; padding: 1.4rem 1.6rem; margin-bottom: 2rem;
+    background: rgba({card}, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 1.75rem 2rem; margin-bottom: 2.5rem;
+    box-shadow:
+      0 8px 40px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }}
   .banner-title {{
     display: flex; align-items: flex-start;
-    justify-content: space-between; gap: 1rem;
-    margin-bottom: 1rem; flex-wrap: wrap;
+    justify-content: space-between; gap: 1.25rem;
+    margin-bottom: 1.25rem; flex-wrap: wrap;
   }}
-  .banner-title h1 {{ font-size: 1.5rem; font-weight: 700; color: var(--text); line-height: 1.3; }}
+  .banner-title h1 {{
+    font-size: 1.65rem; font-weight: 700; color: {text};
+    line-height: 1.35;
+  }}
   .btn-link {{
-    display: inline-block; padding: .4rem .9rem;
-    background: var(--accent); color: #fff;
-    border-radius: 6px; text-decoration: none;
-    font-size: .85rem; white-space: nowrap; transition: opacity .2s;
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .5rem 1rem;
+    background: linear-gradient(135deg, {accent}, {tag});
+    color: #fff;
+    border-radius: 10px; text-decoration: none;
+    font-size: .85rem; font-weight: 500; white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba({accent},0.3);
   }}
-  .btn-link:hover {{ opacity: .85; text-decoration: none; }}
-  .meta-grid {{ display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; margin-bottom: .8rem; }}
-  .meta-item {{ display: flex; align-items: center; gap: .4rem; font-size: .82rem; }}
+  .btn-link:hover {{
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba({accent},0.4);
+    text-decoration: none;
+  }}
+  .meta-grid {{ display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin-bottom: 1rem; }}
+  .meta-item {{ display: flex; align-items: center; gap: .5rem; font-size: .82rem; }}
   .meta-label {{
-    color: #8b949e; background: var(--bg);
-    padding: .15rem .5rem; border-radius: 4px;
-    border: 1px solid var(--border); white-space: nowrap;
+    color: {text}; opacity: 0.7;
+    background: rgba(255,255,255,0.06);
+    padding: .2rem .65rem; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.06); white-space: nowrap;
+    font-size: .75rem;
   }}
-  .meta-value {{ color: var(--text); }}
+  .meta-value {{ color: {text}; font-weight: 500; }}
   .video-desc {{
-    font-size: .82rem; color: #8b949e; line-height: 1.7;
-    margin-top: .5rem; padding: .6rem 1rem;
-    background: var(--bg); border-left: 3px solid var(--accent);
+    font-size: .9rem; color: #8b949e; line-height: 1.75;
+    margin-top: .75rem; padding: .75rem 1rem;
+    background: rgba({bg},0.5); border-left: 3px solid {accent};
+    border-radius: 0 8px 8px 0;
   }}
 
-  body {{ font-family: {font}; background: var(--bg); color: var(--text); line-height: 1.8; padding: 1rem 0; }}
-  h1 {{ font-size: 1.8rem; margin-bottom: 1rem; color: var(--accent); }}
-  h2 {{ font-size: 1.3rem; margin: 2.2rem 0 1rem; padding-bottom: .5rem; border-bottom: 2px solid var(--border); color: var(--accent); }}
-  h3 {{ font-size: 1.05rem; margin: 1.4rem 0 .6rem; color: var(--tag); }}
-  h4 {{ font-size: .95rem; margin: .8rem 0 .3rem; color: var(--text); opacity: .85; }}
-  p  {{ margin: .65rem 0; font-size: .95rem; }}
-  blockquote {{ margin: 1rem 0; padding: .8rem 1rem; background: var(--card); border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0; }}
-  table {{ width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .9rem; }}
-  th, td {{ padding: .5rem .8rem; border: 1px solid var(--border); }}
-  th {{ background: var(--card); color: var(--accent); }}
-  ul, ol {{ margin: .5rem 0 .5rem 1.5rem; }}
-  li {{ margin: .3rem 0; }}
-  hr {{ border: none; border-top: 1px solid var(--border); margin: 2rem 0; }}
-  code {{ background: var(--card); padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }}
+  /* 主内容区 */
+  h1 {{ font-size: 1.9rem; margin-bottom: 1.25rem; color: {accent}; }}
+  h2 {{
+    font-size: 1.35rem; margin: 2.75rem 0 1.25rem; padding-bottom: .75rem;
+    border-bottom: 2px solid rgba(255,255,255,0.1); color: {accent};
+    position: relative;
+  }}
+  h2::after {{
+    content: ''; position: absolute; bottom: -2px; left: 0;
+    width: 60px; height: 2px; background: linear-gradient(90deg, {accent}, transparent);
+  }}
+  h3 {{ font-size: 1.1rem; margin: 1.75rem 0 .75rem; color: {tag}; }}
+  h4 {{ font-size: .95rem; margin: 1rem 0 .4rem; color: {text}; opacity: .88; }}
+  p  {{ margin: .75rem 0; font-size: .95rem; line-height: 1.85; }}
+  blockquote {{
+    margin: 1.25rem 0; padding: 1rem 1.25rem;
+    background: rgba({card}, 0.5); border-left: 4px solid {accent};
+    border-radius: 0 10px 10px 0;
+    backdrop-filter: blur(10px);
+  }}
+  table {{ width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: .9rem; }}
+  th, td {{ padding: .6rem .9rem; border: 1px solid rgba(255,255,255,0.08); }}
+  th {{ background: rgba({card},0.8); color: {accent}; font-weight: 600; }}
+  ul, ol {{ margin: .6rem 0 .6rem 1.75rem; }}
+  li {{ margin: .4rem 0; }}
+  hr {{ border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 2.5rem 0; }}
+  code {{ background: rgba({card},0.8); padding: .15rem .4rem; border-radius: 4px; font-size: .9em; }}
 
+  /* 摘要文本 - 玻璃态效果 */
   .summary-text {{
-    margin: .8rem 0; font-size: .95rem; line-height: 1.85; color: var(--text);
-    padding: .7rem 1rem; background: var(--card);
-    border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0;
+    margin: 1rem 0; font-size: .95rem; line-height: 1.9; color: {text};
+    padding: 1rem 1.25rem; background: rgba({card}, 0.4);
+    border-left: 3px solid {accent}; border-radius: 0 10px 10px 0;
+    border: 1px solid rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
   }}
   .summary-bullets {{
-    list-style: none; margin: .6rem 0 1rem 0; padding: 0;
-    display: flex; flex-wrap: wrap; gap: .4rem;
+    list-style: none; margin: .75rem 0 1.25rem 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: .5rem;
   }}
   .summary-bullets li {{
-    background: var(--card); border: 1px solid var(--border);
-    border-left: 3px solid var(--tag); border-radius: 4px;
-    padding: .3rem .75rem; font-size: .84rem; color: var(--text); margin: 0;
+    background: linear-gradient(135deg, rgba({card},0.6), rgba({card},0.3));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid {tag}; border-radius: 8px;
+    padding: .4rem .85rem; font-size: .84rem; color: {text}; margin: 0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }}
+  .summary-bullets li:hover {{
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-color: rgba({tag},0.3);
   }}
 
-  .ts-range {{ font-size: .72rem; color: #8b949e; font-weight: normal; margin-left: .5rem; font-family: monospace; }}
+  .ts-range {{
+    font-size: .72rem; color: #6e7681; font-weight: normal;
+    margin-left: .75rem; font-family: monospace;
+    background: rgba(255,255,255,0.05); padding: .15rem .4rem;
+    border-radius: 4px;
+  }}
 
-  figure.screenshot {{ margin: 1.5rem 0; text-align: center; }}
+  /* 截图 - 悬浮卡片效果 */
+  figure.screenshot {{ margin: 2rem 0; text-align: center; }}
   figure.screenshot img {{
-    max-width: 100%; border-radius: 8px; border: 1px solid var(--border);
-    display: block; margin: 0 auto; transition: box-shadow .2s;
+    max-width: 100%; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: block; margin: 0 auto;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
   }}
-  figure.screenshot img:hover {{ box-shadow: 0 4px 20px rgba(0,180,216,.2); }}
-  figcaption {{ font-size: .78rem; color: #8b949e; margin-top: .4rem; }}
-  .shot-hint {{ font-size: .74rem; color: #6e7681; margin-top: .2rem; font-style: italic; }}
+  figure.screenshot img:hover {{
+    transform: scale(1.02) translateY(-4px);
+    box-shadow: 0 12px 40px rgba({accent},0.25);
+    border-color: rgba({accent},0.3);
+  }}
+  figcaption {{
+    font-size: .8rem; color: #8b949e; margin-top: .6rem;
+    display: inline-flex; align-items: center; gap: .5rem;
+  }}
+  figcaption::before {{
+    content: ''; width: 6px; height: 6px; background: {accent};
+    border-radius: 50%; display: inline-block;
+  }}
+  .shot-hint {{
+    font-size: .76rem; color: #6e7681; margin-top: .35rem;
+    font-style: italic;
+  }}
 
-  @media (max-width: 768px) {{ .layout {{ flex-direction: column; padding: .5rem; }} .toc-sidebar {{ display: none; }} }}"""
+  /* 分隔线 */
+  hr {{
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    margin: 3rem 0;
+  }}
+
+  /* 响应式 */
+  @media (max-width: 768px) {{
+    .layout {{ flex-direction: column; padding: 1rem; gap: 1.5rem; }}
+    .toc-sidebar {{ display: none; }}
+    .video-banner {{ padding: 1.25rem 1.5rem; border-radius: 12px; }}
+    .banner-title h1 {{ font-size: 1.35rem; }}
+    .btn-link {{ width: 100%; justify-content: center; }}
+  }}"""
 
 
 # ------------------------------------------------------------------ #
