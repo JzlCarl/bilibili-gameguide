@@ -194,6 +194,17 @@ python scripts/download_bilibili_cc.py \
 
 对于多P视频，每个分P独立下载到子目录，格式为 `p01_分P标题`：
 
+#### HOOK: 多P视频复用主任务目录
+
+**问题**：每次调用 create 新目录，导致视频/字幕分散
+
+**脚本行为**：
+```
+1. 先扫描配置根目录下是否有该 BV 的主任务目录（有则复用，无则创建）
+2. 分P放在主目录内，格式 p01_分P标题、p02_分P标题
+3. 不重复创建 base 目录
+```
+
 ```python
 # LLM 可直接在脚本中调用
 from download_bilibili_cc import download_multi_p, make_task_dir
@@ -415,7 +426,11 @@ BVxxx_视频主标题_20260403_1820/
 
 > 用户："帮我把这个 B站游戏视频做成图文攻略：https://www.bilibili.com/video/BV19bXmBpEyn/"
 
-### Step 1：下载字幕（自动使用配置根目录）
+### Step 1：下载视频+字幕（自动使用配置根目录）
+
+> **新工作流**：先下载视频获取准确标题 → 快速检测字幕（有则复制，无则跳过）→ 避免无效等待。
+> - BBDown 使用 `--skip-mux` 保留独立字幕文件，实现快速检测
+> - 无字幕时直接返回 `video_only: true`，耗时约 3-4 秒
 
 #### Windows（cmd 方式，防止 PowerShell profile 拦截）
 
@@ -433,6 +448,11 @@ python scripts/download_bilibili_cc.py \
 
 > 首次使用时会提示设置下载根目录（仅一次）。
 
+**工作流程**：
+1. **Step 1/3** - 下载视频获取准确标题（目录名与实际视频文件一致）
+2. **Step 2/3** - 下载字幕到同一目录
+3. **Step 3/3** - 返回结果
+
 返回 JSON 示例：
 ```json
 {
@@ -441,11 +461,11 @@ python scripts/download_bilibili_cc.py \
   "video_title": "4.3版本攻略",
   "char_count": 2246,
   "task_dir": "/工作区/BV19bXmBpEyn_4.3版本攻略_20260403_1820",
-  "message": "字幕有效，共 2246 字"
+  "message": "字幕下载成功，共 2246 字"
 }
 ```
 - `success: true` + `task_dir` → 字幕有效，继续，使用 `task_dir` 作为工作目录
-- `success: false` + 无 `task_dir` → 停止，按 message 告知用户；若视频已下载则告知路径
+- `success: false` + 有 `task_dir` → 无字幕但视频已下载，任务目录包含 `.mp4` 文件
 
 ### Step 2：LLM 阅读字幕并生成结构
 

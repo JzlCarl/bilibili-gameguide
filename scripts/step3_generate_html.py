@@ -18,11 +18,48 @@ B站视频游戏攻略 · Step 3：生成最终 HTML
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 DEFAULT_CONFIG = SCRIPT_DIR / "config.json"
+
+
+# ── HOOK: ffprobe 查找 ──
+def _find_ffprobe() -> Path | None:
+    """查找 ffprobe.exe"""
+    for name in ("ffprobe", "ffprobe.exe"):
+        p = shutil.which(name)
+        if p:
+            return Path(p)
+    # 已知路径
+    known = Path(r"C:\WorkBuddy_FFmpeg\ffprobe.exe")
+    if known.exists():
+        return known
+    return None
+
+
+# ── HOOK: B站 API 获取 UP 主 ──
+def _fetch_bili_api(bv_id: str) -> dict:
+    """调用 B站 API 获取视频信息，返回 dict（uploader, duration_sec, pub_date）"""
+    import urllib.request
+    try:
+        url = f"https://api.bilibili.com/x/web-interface/view?bvid={bv_id}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.load(resp)
+        if data.get("code") == 0:
+            d = data["data"]
+            return {
+                "uploader": d.get("owner", {}).get("name", ""),
+                "duration_sec": d.get("duration", 0),
+                "pub_date": str(d.get("pubdate", "")),
+            }
+    except Exception:
+        pass
+    return {}
 
 REASON_LABELS = {
     "first":  "首帧",
@@ -475,6 +512,45 @@ def run(config_path: str | Path | None = None):
     cfg = load_config(config_path)
     config_dir = config_path.parent.resolve()
     paths_cfg  = cfg["paths"]
+
+    # ── HOOK: 尝试获取视频信息（时长 + UP主） ──
+    video_cfg = cfg.get("video", {})
+    video_file = video_cfg.get("file", "")
+    bv_id = video_cfg.get("bv_id", "") or video_cfg.get("url", "").split("/")[-1]
+    
+    # 尝试从本地视频获取时长
+    if video_file:
+        video_path = config_dir / video_file
+        if video_path.exists():
+            ffprobe = _find_ffprobe()
+            if ffprobe:
+                try:
+                    import subprocess
+                    r = subprocess.run(
+                        [str(ffprobe), "-v", "error", "-show_entries", "format=duration",
+                         "-of", "default=noprint_wrappers=1:nokey=1", str(video_path)],
+                        capture_output=True, text=True, timeout=10
+                    )
+                    if r.returncode == 0 and r.stdout.strip():
+                        duration_sec = int(float(r.stdout.strip()))
+                        if duration_sec > 0:
+                            video_cfg["duration_sec"] = duration_sec
+                            print(f"[OK] 本地视频时长: {duration_sec}秒")
+                except Exception:
+                    pass
+    
+    # 尝试从 B站 API 获取 UP 主 + 时长（备用）
+    if bv_id and "BV" in bv_id.upper():
+        api_info = _fetch_bili_api(bv_id)
+        if api_info:
+            if not video_cfg.get("uploader") and api_info.get("uploader"):
+                video_cfg["uploader"] = api_info["uploader"]
+                print(f"[OK] UP主: {api_info['uploader']}")
+            if not video_cfg.get("duration_sec") and api_info.get("duration_sec"):
+                video_cfg["duration_sec"] = api_info["duration_sec"]
+                print(f"[OK] API时长: {api_info['duration_sec']}秒")
+            if not video_cfg.get("publish_date") and api_info.get("pub_date"):
+                video_cfg["publish_date"] = api_info["pub_date"]
 
     struct_path  = config_dir / paths_cfg.get("structure_with_subs_file", "video_structure.json")
     mapping_path = config_dir / paths_cfg.get("mapping_file", "screenshot_mapping.json")

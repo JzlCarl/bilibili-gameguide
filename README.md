@@ -90,7 +90,10 @@ bilibili-gameguide/
 
 ## 更新日志
 
-### 2026-04-04
+### 2026-04-04 (最新)
+- **快速字幕检测工作流**：BBDown 使用 `--skip-mux` 保留独立字幕文件，下载视频时同时提取字幕，无字幕时直接返回 `video_only: true`，耗时从 60s 降至 3-4s
+- **自动生成 config.json**：下载完成后自动生成包含 video/paths/cv/html 所有必需字段的完整配置文件
+- **BBDown 字幕文件提取修复**：自动从 CID 子目录复制 `.srt` 文件到任务目录根目录
 - 集成 web-access skill（CDP 自动获取 Cookie）
 - 支持 Windows / macOS / Linux 三平台
 - 新增 `get_bili_cookie.py` 脚本
