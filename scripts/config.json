@@ -1,0 +1,12 @@
+{
+  "bilibili": {
+    "cookie": "DedeUserID=27533021;bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzUzNzM3MjcsImlhdCI6MTc3NTExNDQ2NywicGx0IjotMX0.ADEukiGQuF6nbZ2H3bVPC-HI7lgdCBNFJ8JtE7hxhq0;bili_jct=965f32e9e66064f9577e4ba124a2789e"
+  },
+  "cv": {
+    "pHash_threshold": 20,
+    "hist_threshold": 0.85,
+    "laplacian_threshold": 100,
+    "max_screenshots": 30,
+    "target_interval_sec": 30
+  }
+}

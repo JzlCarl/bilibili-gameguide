@@ -1,0 +1,8 @@
+{
+  "name": "bilibili-gameguide",
+  "description": "B站游戏视频转图文攻略 HTML。LLM 驱动，无硬编码，token 最小化。",
+  "version": "1.0",
+  "created": "2026-04-02",
+  "author": "workbuddy",
+  "tags": ["bilibili", "game-guide", "html", "ffmpeg", "workflow"]
+}

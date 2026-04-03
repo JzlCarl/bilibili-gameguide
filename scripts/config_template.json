@@ -1,0 +1,52 @@
+{
+  "_schema_version": "1.0",
+  "_description": "视频图文攻略配置文件模板。请复制此文件为 config.json，填写实际视频信息。",
+  "_created": "2026-04-02",
+
+  "video": {
+    "file": "视频文件名.mp4",
+    "subtitle": "字幕文件.srt",
+    "url": "https://www.bilibili.com/video/BVxxxx/",
+    "bv_id": "BVxxxx",
+    "title": "视频标题",
+    "uploader": "UP主名称",
+    "duration_sec": 0,
+    "publish_date": "2026-01-01",
+    "description": "视频简介"
+  },
+
+  "paths": {
+    "screenshots_dir": "screenshots",
+    "output_dir": "output",
+    "structure_file": "video_structure.json",
+    "structure_with_subs_file": "video_structure_with_subs.json",
+    "mapping_file": "screenshot_mapping.json",
+    "output_html": "game_guide.html"
+  },
+
+  "cv": {
+    "frame_interval_sec": 1.0,
+    "pHash_threshold": 15,
+    "hist_threshold": 0.20,
+    "laplacian_threshold": 30,
+    "min_gap_sec": 5,
+    "min_window_sec": 3,
+    "max_per_window": 8,
+    "boundary_pHash_threshold": 10,
+    "boundary_hist_threshold": 0.15
+  },
+
+  "html": {
+    "title": "游戏攻略笔记",
+    "accent_color": "#00b4d8",
+    "bg_color": "#0f1419",
+    "card_color": "#1c2128",
+    "text_color": "#e6edf3",
+    "border_color": "#30363d",
+    "tag_color": "#58a6ff",
+    "font_family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    "max_width": "860px",
+    "toc_bg_color": "#0d1117",
+    "toc_width": "260px"
+  }
+}
