@@ -137,7 +137,7 @@ def select_screenshots(video_cap, start_sec: float, end_sec: float,
                        last_ph, last_hist, cv_cfg: dict) -> list[float]:
     """
     为单个时间段选择截图时间点。
-    策略：首帧 + 中间变化帧（最多 MAX_PER_WINDOW 个）+ 末帧（若与最后变化帧不重复）。
+    策略：**始终保留首帧** + 中间变化帧 + 末帧（若不重复）。
     """
     MIN_GAP    = cv_cfg["min_gap_sec"]
     MIN_WINDOW = cv_cfg["min_window_sec"]
@@ -147,9 +147,26 @@ def select_screenshots(video_cap, start_sec: float, end_sec: float,
         return [start_sec] if start_sec < end_sec else []
 
     result = []
-    window_start = start_sec
+    
+    # 始终添加首帧（即使画面无变化，也要截取！）
+    # 但如果首帧与上一段末尾太近（< 2s），则跳过
+    if last_ph is not None:
+        # 检查首帧是否与上一段末尾差异太小
+        frame_start = get_frame_at(video_cap, start_sec)
+        if frame_start is not None:
+            ph, hist, _ = extract_features(frame_start)
+            ph_d = ph_diff(ph, last_ph)
+            hist_d = hist_diff(hist, last_hist)
+            # 差异太小则跳过首帧，让boundary检测处理
+            if ph_d > 5 or hist_d > 0.05:
+                result.append(start_sec)
+    else:
+        # 第一段：强制添加首帧
+        result.append(start_sec)
 
-    # 追踪最后一个选中帧的特征（用于末帧比较）
+    window_start = start_sec + MIN_GAP  # 从首帧后开始找变化
+
+    # 追踪最后一个选中帧的特征
     last_selected_ph   = last_ph
     last_selected_hist = last_hist
 
@@ -352,8 +369,10 @@ def run(config_path: str | Path | None = None):
                 continue
             fname = f"s{global_idx:04d}_{sec_to_ts(t).replace(':', '')}.jpg"
             fpath = shots_dir / fname
-            cv2.imwrite(str(fpath), frame,
-                        [cv2.IMWRITE_JPEG_QUALITY, 88])
+            # 保存截图（用 PIL 替代 cv2.imwrite，解决 Windows/OpenCV 兼容问题）
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_img = Image.fromarray(rgb)
+            pil_img.save(str(fpath), quality=88)
             ph, hist, lap = extract_features(frame)
             prev_ph      = ph
             prev_hist    = hist
